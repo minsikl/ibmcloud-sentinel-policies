@@ -6,10 +6,10 @@ security_group_rules = filter tfplan.resource_changes as _, rc {
 }
 
 deny_open_ssh = rule {
-    all security_group_rules as _, rule {
-        rule.change.after.direction is not "inbound" or
-        rule.change.after.tcp[0].port_min is not 22 or
-        rule.change.after.remote is not "0.0.0.0/0"
+    all security_group_rules as _, sg_rule {
+        sg_rule.change.after.direction is not "inbound" or
+        sg_rule.change.after.tcp[0].port_min is not 22 or
+        sg_rule.change.after.remote is not "0.0.0.0/0"
     }
 }
 
