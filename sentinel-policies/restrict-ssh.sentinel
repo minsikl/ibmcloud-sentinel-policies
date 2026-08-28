@@ -1,0 +1,18 @@
+import "tfplan/v2" as tfplan
+
+security_group_rules = filter tfplan.resource_changes as _, rc {
+    rc.type is "ibm_is_security_group_rule" and
+    (rc.change.actions contains "create" or rc.change.actions contains "update")
+}
+
+deny_open_ssh = rule {
+    all security_group_rules as _, rule {
+        rule.change.after.direction is not "inbound" or
+        rule.change.after.tcp[0].port_min is not 22 or
+        rule.change.after.remote is not "0.0.0.0/0"
+    }
+}
+
+main = rule {
+    deny_open_ssh
+}
