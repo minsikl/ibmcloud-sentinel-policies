@@ -12,24 +12,28 @@ violations = filter security_group_rules as _, sg_rule {
     sg_rule.change.after.remote is "0.0.0.0/0"
 }
 
-main = rule {
-    if length(violations) > 0 {
-        print("")
-        print("#################################################")
-        print("Sentinel Policy Failure")
-        print("#################################################")
-        print("")
-        print("SSH access from 0.0.0.0/0 is not allowed.")
-        print("")
-        print("Reason:")
-        print("Inbound SSH access from the public Internet violates")
-        print("the infrastructure compliance policy.")
-        print("")
-        print("Required action:")
-        print("Replace 0.0.0.0/0 with an approved, restricted")
-        print("network range appropriate for your environment.")
-        print("")
-    }
+if length(violations) > 0 {
+    print("")
+    print("#################################################")
+    print("Sentinel Policy Failure")
+    print("#################################################")
+    print("")
+    print("SSH access from 0.0.0.0/0 is not allowed.")
+    print("")
+    print("Reason:")
+    print("Inbound SSH access from the public Internet")
+    print("violates the infrastructure compliance policy.")
+    print("")
+    print("Required action:")
+    print("Replace 0.0.0.0/0 with an approved, restricted")
+    print("network range appropriate for your environment.")
+    print("")
+}
 
+deny_open_ssh = rule {
     length(violations) is 0
+}
+
+main = rule {
+    deny_open_ssh
 }
