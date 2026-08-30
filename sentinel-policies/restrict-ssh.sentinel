@@ -2,17 +2,34 @@ import "tfplan/v2" as tfplan
 
 security_group_rules = filter tfplan.resource_changes as _, rc {
     rc.type is "ibm_is_security_group_rule" and
-    (rc.change.actions contains "create" or rc.change.actions contains "update")
+    (rc.change.actions contains "create" or
+     rc.change.actions contains "update")
 }
 
-deny_open_ssh = rule {
-    all security_group_rules as _, sg_rule {
-        sg_rule.change.after.direction is not "inbound" or
-        sg_rule.change.after.tcp[0].port_min is not 22 or
-        sg_rule.change.after.remote is not "0.0.0.0/0"
-    }
+violations = filter security_group_rules as _, sg_rule {
+    sg_rule.change.after.direction is "inbound" and
+    sg_rule.change.after.tcp[0].port_min is 22 and
+    sg_rule.change.after.remote is "0.0.0.0/0"
 }
 
 main = rule {
-    deny_open_ssh
+    if length(violations) > 0 {
+        print("")
+        print("#################################################")
+        print("Sentinel Policy Failure")
+        print("#################################################")
+        print("")
+        print("SSH access from 0.0.0.0/0 is not allowed.")
+        print("")
+        print("Reason:")
+        print("Inbound SSH access from the public Internet violates")
+        print("the infrastructure compliance policy.")
+        print("")
+        print("Required action:")
+        print("Replace 0.0.0.0/0 with an approved, restricted")
+        print("network range appropriate for your environment.")
+        print("")
+    }
+
+    length(violations) is 0
 }
