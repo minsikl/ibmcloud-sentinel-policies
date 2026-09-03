@@ -8,8 +8,10 @@ security_group_rules = filter tfplan.resource_changes as _, rc {
 
 violations = filter security_group_rules as _, sg_rule {
     sg_rule.change.after.direction is "inbound" and
-    sg_rule.change.after.tcp[0].port_min is 22 and
-    sg_rule.change.after.remote is "0.0.0.0/0"
+    sg_rule.change.after.remote is "0.0.0.0/0" and
+    sg_rule.change.after.protocol is "tcp" and
+    sg_rule.change.after.port_min <= 22 and
+    sg_rule.change.after.port_max >= 22
 }
 
 if length(violations) > 0 {

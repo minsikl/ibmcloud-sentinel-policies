@@ -1,0 +1,37 @@
+import "tfplan/v2" as tfplan
+
+vpcs = filter tfplan.resource_changes as _, rc {
+    rc.type is "ibm_is_vpc" and
+    (rc.change.actions contains "create" or
+     rc.change.actions contains "update")
+}
+
+violations = filter vpcs as _, vpc {
+    vpc.change.after.no_sg_acl_rules is not true
+}
+
+if length(violations) > 0 {
+    print("")
+    print("#################################################")
+    print("Sentinel Policy Failure")
+    print("#################################################")
+    print("")
+    print("no_sg_acl_rules must be set to true.")
+    print("")
+    print("Reason:")
+    print("The VPC default security group and network ACL")
+    print("auto-created rules must be removed to enforce")
+    print("a deny-by-default network posture.")
+    print("")
+    print("Required action:")
+    print("Set no_sg_acl_rules = true in your workspace variables.")
+    print("")
+}
+
+deny_default_rules = rule {
+    length(violations) is 0
+}
+
+main = rule {
+    deny_default_rules
+}

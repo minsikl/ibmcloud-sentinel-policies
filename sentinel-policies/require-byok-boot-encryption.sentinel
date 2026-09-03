@@ -1,0 +1,38 @@
+import "tfplan/v2" as tfplan
+
+instances = filter tfplan.resource_changes as _, rc {
+    rc.type is "ibm_is_instance" and
+    (rc.change.actions contains "create" or
+     rc.change.actions contains "update")
+}
+
+violations = filter instances as _, instance {
+    (instance.change.after.boot_volume else [{}])[0].encryption else "" is ""
+}
+
+if length(violations) > 0 {
+    print("")
+    print("#################################################")
+    print("Sentinel Policy Failure")
+    print("#################################################")
+    print("")
+    print("Boot volume BYOK encryption is required.")
+    print("")
+    print("Reason:")
+    print("Boot volumes must use a customer-managed key")
+    print("via Key Protect (BYOK) to meet the encryption")
+    print("compliance policy.")
+    print("")
+    print("Required action:")
+    print("Set boot_volume_encryption_mode = \"byok\" in your")
+    print("workspace variables.")
+    print("")
+}
+
+deny_unencrypted_boot = rule {
+    length(violations) is 0
+}
+
+main = rule {
+    deny_unencrypted_boot
+}
